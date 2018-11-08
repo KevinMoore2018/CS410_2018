@@ -22,39 +22,38 @@ const {
 // Instantiate a datastore client
 //const datastore = Datastore();
 
-  
   const app = dialogflow({debug: true});
 app.middleware((conv) => {
-    
+
   });
-  
+
 //app.intent('Welcome',(conv)=>{
 	//conv.close("Motherfucker");
 	//});
-//WebhookResponse("hi");	
-	
+//WebhookResponse("hi");
+
 //app.intent('Add_Vehicle_Make',(conv)=>{
 	//Make = conv.arguments.get('Make');
 	//conv.close("You said " + Make);
 	//var Make = conv.parameters['Make'];
 	//var Model = conv.parameters['Model'];
 	//conv.close("You'd like to add a " + Make + " " + Model + "?");
-	
-//});	
-  
+
+//});
+
   //exports.Welcome = functions.https.onRequest(app);
   //exports.Add_Vehicle_Make = functions.https.onRequest(app);
   //dialogflowFirebaseFulfillment
     exports.Chatbot = functions.https.onRequest((request, response)=>{
 	  const agent = new WebhookClient({request, response});
 	  let conv = agent.conv();
-	//  function welcome(agent){
+	  function welcome(agent){
 		  //agent.add('Welcome message');
-	//  }
+	  }
 	  /*function fallback_general(agent){
 		  agent.add("I'm sorry, but I didn\'t understand you. Remember, you can ask me about adding a vehicle, or [...]");
 	  }*/
-	//  function Add_Vehicle(agent){
+	  function Add_Vehicle(agent){
 			//Make = agent.parameters.Make;
 			//Model = agent.parameters.Model;
 			//agent.add("It's a " + Make + Model + ", right?");
@@ -67,25 +66,49 @@ app.middleware((conv) => {
 				}
 				return makeInfo;
 			});	*/
-	//  }	  
-	  
+	  }
+
+	  function AskVIN(agent){}
+
 	function CheckVIN(agent){
 		VIN = agent.parameters['number-sequence'];
 		var VINvalid = ((VIN !== null) && (VIN.length === 3)); //3 for testing
 		if(!VINvalid){
 			VIN_Fallback(agent);
-		}	
+		}
 		else
 			agent.add("Okay! Let me use VIN #" + VIN + " to find your vehicle information...");
-	} 
-	
+	}
+
+  function verifyMMY(agent){
+    Make = agent.parameters['Make'];
+    Model = agent.parameters['Model'];
+    Year = agent.parameters['Year'];
+    var MakeValid = (Make !== null);
+    var ModelValid = (Model !== null);
+    var YearValid = ((Year !== null) && ((Year.length === 2) or (Year.length === 4));
+    if((!MakeValid)&&(!ModelValid)&&(!YearValid)){
+      if(!MakeValid){
+        agent.add("Please make sure you enter a valid Make.");
+      }
+      if(!ModelValid){
+        agent.add("Please make sure you enter a valid Model.");
+      }
+      if(!YearValid){
+        agent.add("Please make sure you enter a valid Year.");
+      }
+      else {
+        agent.add("Okay! Let me use Make, " + Make + "Model, " + Model + "and Year, " + Year + "to find your vehicle information...");
+    }
+  }
+
 	function VIN_Fallback(agent){
 		agent.add("Please make sure that you're entering a valid VIN. Need help finding your VIN? Try to stand outside the vehicle on the driver's side and look at the corner of the dashboard where it meets the windshield. If the VIN cannot be found there, open the driver's side door and look at the door post (where the door latches when it is closed).");
 		//dialogflow.contexts.create("projects/chatbot-e90dd/agent/sessions/"+request.body.sessionId,"Add_Vehicle-yes-followup",1);
-	}//This exists due to testing, but should clean this up later. also forget that previous line	 
-	  
+	}//This exists due to testing, but should clean this up later. also forget that previous line
+
 	  function ForDB(agent){
-		
+
 		var cMake = agent.parameters.Make;
 		agent.add("Uploading " + cMake);
 		return admin.database().ref('carInfo').transaction((carInfo)=>{
@@ -93,18 +116,18 @@ app.middleware((conv) => {
 			console.log(carInfo);
 			return carInfo;
 		});
-	  }	
-	  
+	  }
+
 	  	  function Write(agent){
 		  var carMake = agent.parameters.Make;
 		  const dialogflowAgentRef = db.collection('Vehicle').doc('Car');
 		  return db.runTransaction(t=>{
 			  t.set(dialogflowAgentRef,{Make: carMake});
 			  return Promise.resolve('Write complete');
-		  }); 
-	  }  
-	  
-	  
+		  });
+	  }
+
+
 	  let intentMap = new Map();
 	  //intentMap.set('Welcome', welcome);
 	  //intentMap.set('Default Fallback Intent',fallback_general);
@@ -113,6 +136,6 @@ app.middleware((conv) => {
 	  //intentMap.set('Add_Vehicle-yes',AskVIN);
 	  intentMap.set('Add_Vehicle-yes-VIN',CheckVIN);
 	  //intentMap.set('VIN_Fallback',VIN_Fallback);
-	  
+
 	  agent.handleRequest(intentMap);
-  });	
+  });

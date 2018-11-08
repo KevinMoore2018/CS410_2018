@@ -84,23 +84,22 @@ app.middleware((conv) => {
     Make = agent.parameters['Make'];
     Model = agent.parameters['Model'];
     Year = agent.parameters['Year'];
-    var MakeValid = (Make !== null);
-    var ModelValid = (Model !== null);
-    var YearValid = ((Year !== null) && ((Year.length === 2) || (Year.length === 4)));
-    if((!MakeValid)&&(!ModelValid)&&(!YearValid)){
+    var MakeValid = (Make.length > 0);
+    var ModelValid = (Model.length > 0);
+    var YearValid = ((Year.length > 0) && ((Year.length === 2) || (Year.length === 4)));
+    if((!MakeValid)||(!ModelValid)||(!YearValid)){
       if(!MakeValid){
         agent.add("Please make sure you enter a valid Make.");
       }
-      if(!ModelValid){
+      else if(!ModelValid){
         agent.add("Please make sure you enter a valid Model.");
       }
       if(!YearValid){
         agent.add("Please make sure you enter a valid Year.");
       }
-      else {
-        agent.add("Okay! Let me use Make, " + Make + "Model, " + Model + "and Year, " + Year + "to find your vehicle information...");
+    } else {
+        agent.add("Okay! Let me use Make: " + Make + ", Model: " + Model + ", and Year: " + Year + ", to find your vehicle information...");
       }
-    }
   }
 
 	function VIN_Fallback(agent){
@@ -137,6 +136,7 @@ app.middleware((conv) => {
 	  //intentMap.set('Add_Vehicle-yes',AskVIN);
 	  intentMap.set('Add_Vehicle-yes-VIN',CheckVIN);
 	  //intentMap.set('VIN_Fallback',VIN_Fallback);
+    intentMap.set('Add_Vehicle-askMMY',verifyMMY);
 
 	  agent.handleRequest(intentMap);
   });

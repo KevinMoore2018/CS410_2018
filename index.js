@@ -86,7 +86,7 @@ app.middleware((conv) => {
     Year = agent.parameters['Year'];
     var MakeValid = (Make !== null);
     var ModelValid = (Model !== null);
-    var YearValid = ((Year !== null) && ((Year.length === 2) or (Year.length === 4));
+    var YearValid = ((Year !== null) && ((Year.length === 2) || (Year.length === 4)));
     if((!MakeValid)&&(!ModelValid)&&(!YearValid)){
       if(!MakeValid){
         agent.add("Please make sure you enter a valid Make.");
@@ -99,6 +99,7 @@ app.middleware((conv) => {
       }
       else {
         agent.add("Okay! Let me use Make, " + Make + "Model, " + Model + "and Year, " + Year + "to find your vehicle information...");
+      }
     }
   }
 

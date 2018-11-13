@@ -11,6 +11,7 @@ admin.initializeApp({
 const db = admin.firestore();
 const {WebhookClient} = require('dialogflow-fulfillment');
 var Make,Model,Year,VIN;
+var count = 0;
 //const Datastore = require('@google-cloud/datastore');
 const {
   SimpleResponse,
@@ -46,6 +47,10 @@ app.middleware((conv) => {
   //dialogflowFirebaseFulfillment
     exports.Chatbot = functions.https.onRequest((request, response)=>{
 	  const agent = new WebhookClient({request, response});
+	  if(count === 0){
+		  agent.add("Welcome");
+		  count++;
+	  }		  
 	  let conv = agent.conv();
 	  function welcome(agent){
 		  //agent.add('Welcome message');
@@ -74,7 +79,9 @@ app.middleware((conv) => {
 		VIN = agent.parameters['number-sequence'];
 		var VINvalid = ((VIN !== null) && (VIN.length === 3)); //3 for testing
 		if(!VINvalid){
-      VIN_Fallback(agent);
+      //VIN_Fallback(agent);
+			agent.add("I recognized a VIN, but it doesn't seem to be valid. Try double checking your information and entering it again.");
+      
 		}
 		else {
       agent.add("Okay! Let me use VIN #" + VIN + " to find your vehicle information...");
@@ -99,7 +106,7 @@ app.middleware((conv) => {
         agent.add("Please make sure you enter a valid Year.");
       }
     } else {
-        agent.add("Okay! Let me use Make: " + Make + ", Model: " + Model + ", and Year: " + Year + ", to find your vehicle information...");
+        agent.add("Okay! Let me add your " + Year + " " + Make + " " + Model + ".");
       }
   }
 

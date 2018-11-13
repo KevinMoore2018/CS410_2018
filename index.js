@@ -79,11 +79,13 @@ app.middleware((conv) => {
 		VIN = agent.parameters['number-sequence'];
 		var VINvalid = ((VIN !== null) && (VIN.length === 3)); //3 for testing
 		if(!VINvalid){
-			//VIN_Fallback(agent);
+      //VIN_Fallback(agent);
 			agent.add("I recognized a VIN, but it doesn't seem to be valid. Try double checking your information and entering it again.");
+      
 		}
-		else
-			agent.add("Okay! Let me use VIN #" + VIN + " to find your vehicle information...");
+		else {
+      agent.add("Okay! Let me use VIN #" + VIN + " to find your vehicle information...");
+    }
 	}
 
   function verifyMMY(agent){
@@ -110,7 +112,15 @@ app.middleware((conv) => {
 
 	function VIN_Fallback(agent){
 		agent.add("Please make sure that you're entering a valid VIN. Need help finding your VIN? Try to stand outside the vehicle on the driver's side and look at the corner of the dashboard where it meets the windshield. If the VIN cannot be found there, open the driver's side door and look at the door post (where the door latches when it is closed).");
-		//dialogflow.contexts.create("projects/chatbot-e90dd/agent/sessions/"+request.body.sessionId,"Add_Vehicle-yes-followup",1);
+    // The below code is an attempt to reset the contexts manually, still a work in progress
+    //let responseJson = {};
+    //var contextStr = '[{"name":"Add_Vehicle_Enter", "lifespan":0, "parameters":{}},{"name":"Add_Vehicle_Enter","lifespan":1,"parameters":{}}]';
+    //var contextObj = JSON.parse(contextStr);
+    //responseJson.contextOut = contextObj;
+    //console.log('Response:'+JSON.stringify(responseJson));
+    //response.json(responseJson);
+
+   //dialogflow.contexts.create("projects/chatbot-e90dd/agent/sessions/"+request.body.sessionId,"Add_Vehicle-yes",1);
 	}//This exists due to testing, but should clean this up later. also forget that previous line
 
 	  function ForDB(agent){

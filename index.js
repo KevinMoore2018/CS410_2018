@@ -77,6 +77,7 @@ app.middleware((conv) => {
 
 	function CheckVIN(agent){
 		VIN = agent.parameters['number-sequence'];
+		/*
 		var VINvalid = ((VIN !== null) && (VIN.length === 3)); //3 for testing
 		if(!VINvalid){
       //VIN_Fallback(agent);
@@ -85,7 +86,8 @@ app.middleware((conv) => {
 		}
 		else {
       agent.add("Okay! Let me use VIN #" + VIN + " to find your vehicle information...");
-    }
+    }*/
+		agent.add("Are you sure that " + VIN + " is the correct VIN for your vehicle?");
 	}
 
   function verifyMMY(agent){
@@ -94,7 +96,7 @@ app.middleware((conv) => {
     Year = agent.parameters['Year'];
     var MakeValid = (Make.length > 0);
     var ModelValid = (Model.length > 0);
-    var YearValid = ((Year.length > 0) && ((Year.length === 2) || (Year.length === 4)));
+    var YearValid = (Year.length > 0); //&& ((Year.length === 2) || (Year.length === 4)));
     if((!MakeValid)||(!ModelValid)||(!YearValid)){
       if(!MakeValid){
         agent.add("Please make sure you enter a valid Make.");
@@ -107,6 +109,7 @@ app.middleware((conv) => {
       }
     } else {
         agent.add("Okay! Let me add your " + Year + " " + Make + " " + Model + ".");
+		agent.add("Let's move on. How many miles are on the car currently?");
       }
   }
 

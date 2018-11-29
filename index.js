@@ -1,158 +1,92 @@
-'use strict';
-//Initialize libraries
-const {dialogflow} = require('actions-on-google');
-const functions = require('firebase-functions');
-const admin = require('firebase-admin');
-//var serviceAccount = require("path/to/serviceAccountKey.json");
-admin.initializeApp({
-  credential: admin.credential.applicationDefault(),
-  databaseURL: "https://chatbot-e90dd.firebaseio.com"
-});
-const db = admin.firestore();
+const functions = require("firebase-functions");
 const {WebhookClient} = require('dialogflow-fulfillment');
-var Make,Model,Year,VIN;
-var count = 0;
-//const Datastore = require('@google-cloud/datastore');
-const {
-  SimpleResponse,
-  BasicCard,
-  Image,
-  Suggestions,
-  Button
-} = require('actions-on-google');
-// Instantiate a datastore client
-//const datastore = Datastore();
+const admin = require('firebase-admin');
+const serviceAccount = require('./chatbot-e90dd-firebase-adminsdk-y4r0g-5381b4d375');
+const vindec = require('vindec');
 
-  const app = dialogflow({debug: true});
-app.middleware((conv) => {
+process.env.DEBUG = 'dialogflow:debug';
 
-  });
+admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+    databaseURL: 'https://chatbot-e90dd.firebaseio.com'
+});
 
-//app.intent('Welcome',(conv)=>{
-	//conv.close("Motherfucker");
-	//});
-//WebhookResponse("hi");
+const db = admin.database();
+const ref = db.ref();
+const refUser = ref.child('users');
+const refVehicle = ref.child('vehicles');
+let count = 0;
 
-//app.intent('Add_Vehicle_Make',(conv)=>{
-	//Make = conv.arguments.get('Make');
-	//conv.close("You said " + Make);
-	//var Make = conv.parameters['Make'];
-	//var Model = conv.parameters['Model'];
-	//conv.close("You'd like to add a " + Make + " " + Model + "?");
+exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, response) => {
+    const agent = new WebhookClient({request, response});
+    const prefix = 'projects/chatbot-e90dd/agent/sessions/' + agent.session;
 
-//});
-
-  //exports.Welcome = functions.https.onRequest(app);
-  //exports.Add_Vehicle_Make = functions.https.onRequest(app);
-  //dialogflowFirebaseFulfillment
-    exports.Chatbot = functions.https.onRequest((request, response)=>{
-	  const agent = new WebhookClient({request, response});
-	  if(count === 0){
-		  agent.add("Welcome");
-		  count++;
-	  }		  
-	  let conv = agent.conv();
-	  function welcome(agent){
-		  //agent.add('Welcome message');
-	  }
-	  /*function fallback_general(agent){
-		  agent.add("I'm sorry, but I didn\'t understand you. Remember, you can ask me about adding a vehicle, or [...]");
-	  }*/
-	  function Add_Vehicle(agent){
-			//Make = agent.parameters.Make;
-			//Model = agent.parameters.Model;
-			//agent.add("It's a " + Make + Model + ", right?");
-			//agent.add("I hope this works");
-			//const original = request.query.text;
-			//return admin.databasw().ref('/info').push(
-			/*return admin.database().ref('carInfo').transaction((carInfo)=>{
-				if(carInfo !== null){
-					carInfo.Make = Make;
-				}
-				return makeInfo;
-			});	*/
-	  }
-
-	  function AskVIN(agent){}
-
-	function CheckVIN(agent){
-		VIN = agent.parameters['number-sequence'];
-		var VINvalid = ((VIN !== null) && (VIN.length === 3)); //3 for testing
-		if(!VINvalid){
-      //VIN_Fallback(agent);
-			agent.add("I recognized a VIN, but it doesn't seem to be valid. Try double checking your information and entering it again.");
-      
-		}
-		else {
-      agent.add("Okay! Let me use VIN #" + VIN + " to find your vehicle information...");
+    if(count === 0){
+        agent.add("Welcome");
+        count++;
     }
-	}
 
-  function verifyMMY(agent){
-    Make = agent.parameters['Make'];
-    Model = agent.parameters['Model'];
-    Year = agent.parameters['Year'];
-    var MakeValid = (Make.length > 0);
-    var ModelValid = (Model.length > 0);
-    var YearValid = ((Year.length > 0) && ((Year.length === 2) || (Year.length === 4)));
-    if((!MakeValid)||(!ModelValid)||(!YearValid)){
-      if(!MakeValid){
-        agent.add("Please make sure you enter a valid Make.");
-      }
-      else if(!ModelValid){
-        agent.add("Please make sure you enter a valid Model.");
-      }
-      if(!YearValid){
-        agent.add("Please make sure you enter a valid Year.");
-      }
-    } else {
-        agent.add("Okay! Let me add your " + Year + " " + Make + " " + Model + ".");
-      }
-  }
+    function addVehicleVIN(agent) {
+        let vin = agent.parameters['VIN_Number'];
 
-	function VIN_Fallback(agent){
-		agent.add("Please make sure that you're entering a valid VIN. Need help finding your VIN? Try to stand outside the vehicle on the driver's side and look at the corner of the dashboard where it meets the windshield. If the VIN cannot be found there, open the driver's side door and look at the door post (where the door latches when it is closed).");
-    // The below code is an attempt to reset the contexts manually, still a work in progress
-    //let responseJson = {};
-    //var contextStr = '[{"name":"Add_Vehicle_Enter", "lifespan":0, "parameters":{}},{"name":"Add_Vehicle_Enter","lifespan":1,"parameters":{}}]';
-    //var contextObj = JSON.parse(contextStr);
-    //responseJson.contextOut = contextObj;
-    //console.log('Response:'+JSON.stringify(responseJson));
-    //response.json(responseJson);
+        if(vindec.validate(vin)) {
+            agent.context.set({name: 'Add_Vehicle-merge', lifespan: 1, parameters: {VIN: vin}}); //now setting context straight to total miles
+            agent.context.set({name: 'Add_Vehicle_Enter', lifespan: 0});
+            agent.add("Great! Now this vin: " + vin + " will be added. How many miles are on your vehicle currently?"); //matching output to totalmiles
+        } else {
+            agent.context.set({name: 'Add_Vehicle_Enter', lifespan: 1});
+            agent.context.set({name: 'Add_Vehicle_merge', lifespan: 0}); //now setting context straight to total miles
+            agent.add('Not a valid VIN! Please try again.');
+        }
+    }
 
-   //dialogflow.contexts.create("projects/chatbot-e90dd/agent/sessions/"+request.body.sessionId,"Add_Vehicle-yes",1);
-	}//This exists due to testing, but should clean this up later. also forget that previous line
+    function confirmVIN(agent) {
+        let vin = agent.parameters['VIN'];
+        let conf = agent.parameters['boolean'];
+        let refKey = "-1";
 
-	  function ForDB(agent){
+        if(conf) {
+            let vehData = vindec.decode(vin);
+            refKey = pushToDb('jhsmith', refVehicle, {vehicle: vehData});
+            agent.add('The vehicle was added!');
+            agent.add("Let's move on. How many miles are on the car currently?");
+        } else{
+            agent.context.set({name: 'Add_Vehicle_Enter', lifespan: 1});
+            agent.add('Please enter the VIN number for the vehicle you would like to add.')
+        }
+    }
 
-		var cMake = agent.parameters.Make;
-		agent.add("Uploading " + cMake);
-		return admin.database().ref('carInfo').transaction((carInfo)=>{
-			carInfo.Make = cMake;
-			console.log(carInfo);
-			return carInfo;
-		});
-	  }
+    function addVehicleMMY(agent) {
+        let make = agent.parameters['make'];
+        let model = agent.parameters['model'];
+        let year = agent.parameters['year'];
 
-	  	  function Write(agent){
-		  var carMake = agent.parameters.Make;
-		  const dialogflowAgentRef = db.collection('Vehicle').doc('Car');
-		  return db.runTransaction(t=>{
-			  t.set(dialogflowAgentRef,{Make: carMake});
-			  return Promise.resolve('Write complete');
-		  });
-	  }
+        if(year.length < 4 || year > 2019) {
+            agent.add("Please make sure you enter a valid Make");
+        } else if(model.length <= 0) {
+            agent.add("Please make sure you enter a valid Model.");
+        } else if(make.length <= 0){
+            agent.add("Please make sure you enter a valid Make.");
+        } else {
+            agent.add("Okay! Let me add your " + year + " " + make + " " + model + ".");
+            agent.add("Let's move on. How many miles are on the car currently?");
+        }
+    }
 
+    let intentMap = new Map();
+    intentMap.set('Add_Vehicle-yes-VIN', addVehicleVIN);
+    //intentMap.set('', confirmVIN);
+    intentMap.set('Add_Vehicle-askMMY',addVehicleMMY);
+    agent.handleRequest(intentMap);
+});
 
-	  let intentMap = new Map();
-	  //intentMap.set('Welcome', welcome);
-	  //intentMap.set('Default Fallback Intent',fallback_general);
-	  //intentMap.set('Add_Vehicle',Add_Vehicle);
-	  intentMap.set('ForDatabase',Write); //test for writing to db
-	  //intentMap.set('Add_Vehicle-yes',AskVIN);
-	  intentMap.set('Add_Vehicle-yes-VIN',CheckVIN);
-	  //intentMap.set('VIN_Fallback',VIN_Fallback);
-    intentMap.set('Add_Vehicle-askMMY',verifyMMY);
+function pushToDb(user, ref, data) {
+    let newRef = ref.push();
+    newRef.set(data);
+    writeToDb(user, {vehicle: newRef.key});
+    return newRef.key;
+}
 
-	  agent.handleRequest(intentMap);
-  });
+function writeToDb(user, ref, data) {
+    refUser.child(user).update(data);
+}

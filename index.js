@@ -21,11 +21,6 @@ exports.dialogflowFirebaseFulfillment = functions.https.onRequest((request, resp
     const agent = new WebhookClient({request, response});
     const prefix = 'projects/chatbot-e90dd/agent/sessions/' + agent.session;
 
-    if(count === 0){
-        agent.add("Welcome");
-        count++;
-    }
-
     function addVehicleVIN(agent) {
         let vin = agent.parameters['VIN_Number'];
 
